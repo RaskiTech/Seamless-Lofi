@@ -15,7 +15,6 @@ const InitializeAudioWorklet = async (audioContext) => {
         //oscillator.start();
         node.connect(audioContext.destination)
 
-        console.log(`loaded module ${processorModuleName}`);
         return node;
     }
     catch(e)
@@ -25,9 +24,9 @@ const InitializeAudioWorklet = async (audioContext) => {
 }
 
 function App() {
-    const [isPlaying, setIsPlaying] = useState(false);
+    const [isPlaying, setIsPlayingState] = useState(false);
     const audioContext = useRef(null);
-    const nodeRef = useRef(null);
+    const [nodeRef, setNodeRef] = useState(null);
 
     const StartAudioStream = async () =>
     {
@@ -39,28 +38,26 @@ function App() {
                 return;
             }
         } 
-        console.log('New context instantiated')
 
-        if (nodeRef.current === null)
+        if (nodeRef === null)
         {
-            nodeRef.current = await InitializeAudioWorklet(audioContext.current);
+            // nodeRef.current = await InitializeAudioWorklet(audioContext.current);
+            setNodeRef(await InitializeAudioWorklet(audioContext.current));
         }
-
-        nodeRef.current.port.postMessage({"play": !isPlaying});
-        setIsPlaying(!isPlaying);
     }
 
+    const SetIsPlaying = (playing) => {
+        setIsPlayingState(playing);
+        nodeRef.port.postMessage({play: playing});
+    }
 
-    const addNote = async (pitch) => {
-        nodeRef.current.port.postMessage(
-            {
-                type: "addNote",
-                instrument: "synth",
-                pitch: pitch,
-                startTime: 0.0,
-                releaseTime: 2.0,
-            }
-        );
+    const ResetAudio = () => {
+        if (nodeRef !== null) {
+            SetIsPlaying(false);
+            nodeRef.port.onmessage = null;
+            nodeRef.port.close();
+            setNodeRef(null);
+        }
     }
 
     return (
@@ -71,8 +68,8 @@ function App() {
                 <span>...in development. It might not sound like it yet.</span>
                 <span style={{"height": "20px"}}/>
                 <button className="button" onClick={StartAudioStream} type="button" > StartAudioStream </button>
-                <button className="button" disabled={nodeRef.current === null} onClick={() => addNote(440)} >Add note</button>
-                <Sequencer nodeRef={nodeRef} play={isPlaying}/>
+                <button className="button" disabled={nodeRef === null} onClick={() => SetIsPlaying(!isPlaying)} >{isPlaying ? "Stop" : "Start"}</button>
+                <Sequencer nodeRef={nodeRef} play={isPlaying} ResetAudio={ResetAudio}/>
 
             </header>
         </div>

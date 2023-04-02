@@ -5,7 +5,16 @@ var VECTOR_SIZE = 100;
 export async function LoadModel(stateToLoadModelInto) {
     try {
         const model = await tf.loadLayersModel("Model/model.json");
-        stateToLoadModelInto.model = model;
+
+        const response = await fetch("Model/PCA_data.bin");
+        const blob = await response.arrayBuffer();
+        const arr = new Float32Array(blob)
+
+        const modelEvecs = arr.slice(0, VECTOR_SIZE*VECTOR_SIZE);
+        const modelMeans = arr.slice(VECTOR_SIZE*VECTOR_SIZE, VECTOR_SIZE*VECTOR_SIZE+VECTOR_SIZE);
+        const modelEvals = arr.slice(VECTOR_SIZE*VECTOR_SIZE+VECTOR_SIZE);
+
+        stateToLoadModelInto.model = { model: model, evecs: modelEvecs, means: modelMeans, evals: modelEvals };
     }
     catch (e) { console.log("Error loading model:\n", e) }
 
@@ -17,8 +26,25 @@ export async function Predict(model, predictVector) {
         return [];
     }
 
-    // console.log("Predicting with model", model, "and vector", predictVector);
-    const result = model.predict(tf.tensor([predictVector]));
+    // Do PCA to the vector
+    let mul = new Array(predictVector.length);
+    for (let i = 0; i < predictVector.length; i++) {
+        mul[i] = predictVector[i] * model.evals[i];
+    }
+    let vector_temp = new Array(VECTOR_SIZE);
+    for (let i = 0; i < VECTOR_SIZE; i++) {
+        let sum = 0;
+        for (let j = 0; j < VECTOR_SIZE; j++) {
+            sum += mul[j] * model.evecs[j * VECTOR_SIZE + i];
+        }
+        vector_temp[i] = sum;
+    }
+    let vector_new = new Array(vector_temp.length);
+    for (let i = 0; i < vector_temp.length; i++) {
+        vector_new[i] = vector_temp[i] + model.means[i];
+    }
+
+    const result = model.model.predict(tf.tensor([vector_new]));
     return result.arraySync()[0];
 }
 

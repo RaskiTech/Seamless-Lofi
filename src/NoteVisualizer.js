@@ -14,11 +14,6 @@ function NoteVisualizer(props) {
 
         const context = canvasRef.current.getContext('2d');
 
-        //context.width = WIDTH;
-        //context.height = HEIGHT;
-
-        console.log("Regenerating noteVisualizer image. ", noteArray, treshhold)
-
         canvasRef.current.width = WIDTH;
         canvasRef.current.height = HEIGHT;
 
@@ -37,7 +32,6 @@ function NoteVisualizer(props) {
 
         } 
 
-        console.log(canvasRef, canvasRef.current);
         const imageData = context.createImageData(WIDTH, HEIGHT);
         imageData.data.set(pixels);
         context.putImageData(imageData, 0, 0);
@@ -52,10 +46,6 @@ function NoteVisualizer(props) {
         ApplyNotes(props.notes, props.noteTreshhold)
     }, [props.notes, props.noteTreshhold]);
     
-    useEffect(() => {
-        console.log("Timestep:", props.timeStep);
-    }, [props.timeStep])
-
     return (
         <div className="pianoRoll">
         <canvas ref={canvasRef}/>

@@ -2,7 +2,7 @@
  * @class BypassProcessor
  * @extends AudioWorkletProcessor
  */
-import { GetWaveAtTime, SoundAction } from './MusicPlayer.js';
+import { GetWaveAtTime, SoundAction, ResetAudioData } from './MusicPlayer.js';
 
 const sampleRate = 44100;
 const VERBOSE = false;
@@ -15,7 +15,8 @@ class BypassProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
         this.isPlaying = false;
-        this.port.onmessage = this.onmessage.bind(this)
+        this.port.onmessage = this.onmessage.bind(this);
+        ResetAudioData();
     }
 
     onmessage(event) {
@@ -24,8 +25,10 @@ class BypassProcessor extends AudioWorkletProcessor {
         if (VERBOSE)
             console.log("Event", data);
         
-        if (data.play !== undefined)
+        if (data.play !== undefined) {
             this.isPlaying = data.play;
+            return
+        }
 
         // Convert times from relative to absolute
         if (data.startTime   !== undefined)
@@ -37,11 +40,10 @@ class BypassProcessor extends AudioWorkletProcessor {
     }
 
     process(inputs, outputs, params) {
-        var verbose = VERBOSE && this.phase % 1000 === 0;
+        var verbose = VERBOSE && this.phase % 10000 === 0;
 
 
         if(!this.isPlaying) {
-            console.log("Music on hold", outputs.length);
             return true;
         }
 

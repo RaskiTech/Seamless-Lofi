@@ -9,7 +9,16 @@ const instruments = {
     },
     "soundTest": {
         waveFunction: GetSoundTest,
-    }
+    },
+    "midnight": {
+        waveFunction: GetMidnightSound,
+    },
+    "electric": {
+        waveFunction: GetElectricSynth,
+    },
+    "noise": {
+        waveFunction: GetNoise,
+    },
 };
 
 // Note should contain:
@@ -17,22 +26,56 @@ const instruments = {
 // pitch: number
 // activateTime: number 
 // releaseTime: number
-let notes = new Array(50);
-let noteIndex = 0;
+let notes;
+let noteIndex;
 // Clip should contain:
 // sampleBuffer
-// activateTime
+// time
 // sampleRate
-let clips = new Array(30);
-let clipIndex = 0;
+let clips;
+let clipIndex;
 
-function DontCrackOnMe(time, endTime, attackTime=0.05, releaseTime=0.05) {
+// These clips are loaded at the start and stay loaded. Primarely used for ambience
+// Looping clips should contain:
+// volume: 0 if not playing
+// time
+// sampleRate
+// sampleBuffer
+let ambienceClips;
+
+export function ResetAudioData() { 
+    notes = new Array(30); 
+    noteIndex = 0;
+    clips = new Array(20); 
+    clipIndex = 0;
+    ambienceClips = new Array(5);
+}
+
+/* #region waveMath */
+
+function DontCrackOnMe(time, endTime, attackTime=0.025, releaseTime=0.025) {
+    if (time > endTime)
+        return 0;
     if (time < attackTime)
         return time / attackTime;
     if (time + releaseTime > endTime) {
         return (endTime - time) / releaseTime;
     }
     return 1;
+}
+
+function GetNoise(playedTime, endTime, pitch) {
+
+    if (playedTime > endTime)
+        return [0, 0];
+
+    var velocity = 0.3;
+
+    var wave = Math.random();
+
+    wave *= velocity;
+    
+    return [wave, wave]
 }
 
 function GetOscillatorWave(playedTime, endTime, pitch) {
@@ -42,7 +85,6 @@ function GetOscillatorWave(playedTime, endTime, pitch) {
 
     var wave = 0;
 
-    // https://www.youtube.com/watch?v=ogFAHvYatWs    
     wave += 0.6  * Math.sin(1 * playedTime * hz);
     wave += 0.2  * Math.sin(2 * playedTime * hz);
     wave += 0.05 * Math.sin(4 * playedTime * hz);
@@ -53,7 +95,14 @@ function GetOscillatorWave(playedTime, endTime, pitch) {
     return [wave, wave];
 }
 
+function GetSoundTest(playedTime, endTime, pitch) {
+    return [0, 0];
+}
+
 function GetSynthWave(playedTime, endTime, pitch) {
+
+    if (playedTime > endTime)
+        return [0, 0];
 
     var GetAmplitudeModification = (index, offset) => { return 1 + 0.5 * Math.sin(offset + playedTime * 5 * Math.pow(index, 2)) }
     // offset: Random value to separate different detune function calls
@@ -96,23 +145,88 @@ function GetSynthWave(playedTime, endTime, pitch) {
     return [left, right];
 }
 
-function GetSoundTest(playTime, endTime, pitch) {
+function GetMidnightSound(playTime, endTime, pitch) {
+    var hz = pitch * TAU;
+
+    var wave = Math.sin(playTime * hz);
     
-    return [0.2, 0.2];
+    // TODO: Make repeat
+
+    const interval = 0.5
+    var repeatCount = Math.floor(playTime/interval)
+    var repeatingTime = playTime - repeatCount * interval
+    wave *= Math.exp(playTime * -4 / (repeatCount + 1))
+
+    // Falloff
+    const releaseTime = 0.1
+    if (playTime > endTime)
+        wave *= 0;
+    if (playTime + releaseTime > endTime) {
+        wave *= (endTime - playTime) / releaseTime;
+    }
+
+
+
+    //wave *= DontCrackOnMe(playTime, endTime, 0.01, 0.01)
+    return [wave, wave];
 }
 
+function GetElectricSynth(playTime, endTime, pitch) {
+    var hz = pitch * TAU;
 
+
+    var f1v = 2.8163;
+    var f2v = 1.1698;
+    var f3v = 0.37175;
+    var f4v = 0.005;
+    var f5v = 0.009;
+    var f6v = 0.005;
+
+    var wave = 0;
+    wave += f1v * Math.sin(1 * hz * playTime);
+    wave += f2v * Math.sin(2 * hz * playTime);
+    wave += f3v * Math.sin(3 * hz * playTime);
+    wave += f4v * Math.sin(4 * hz * playTime);
+    wave += f5v * Math.sin(5 * hz * playTime);
+    wave += f6v * Math.sin(6 * hz * playTime);
+    
+    wave = wave * wave + 3 * wave;
+
+    // Velocity
+    var clampedTime = Math.min(playTime, endTime)
+
+    var velocity = 0.1;
+    velocity *= Math.exp(clampedTime * -0.7) + 0.2;
+    var velocityLeft = velocity + 0.01 * Math.sin(clampedTime * 20);
+    var velocityRight = velocity + 0.01 * Math.sin(3.14159 + clampedTime * 20);
+
+    // Make high pitch sounds a little quieter
+    velocityLeft  /= pitch * 0.01;
+    velocityRight /= pitch * 0.01;
+
+    if (playTime > endTime) {
+        var releaseVelocity = Math.exp((playTime - endTime) * -2);
+        velocityLeft  *= releaseVelocity;
+        velocityRight *= releaseVelocity;
+
+    }
+
+
+
+    const attackTime = 0.02;
+    if (playTime < attackTime)
+        wave *= playTime / attackTime;
+    return [wave * velocityLeft, wave * velocityRight]
+}
+
+/* #endregion */
 
 
 function GetInstrumentSound(instrument, note, time, verbose) {
     // Get waveform of instrumet
     // Modify it with attack, release and sustain
 
-    if (note.activateTime > time || time > note.releaseTime)
-        return [0.0, 0.0];
-
     var sound = instrument.waveFunction(time - note.activateTime, note.releaseTime - note.activateTime, note.pitch)
-
 
     if (verbose) {
         if (sound[0] > 1 || sound[0] < -1 || sound[1] > 1 || sound[1] < -1)
@@ -123,18 +237,27 @@ function GetInstrumentSound(instrument, note, time, verbose) {
 
     return sound;
 }
-function GetClipSound(time, clip, verbose) {
+function GetClipSound(absTime, clip, verbose) {
     var sound = 0;
 
     var clipLength = clip.sampleBuffer.length / clip.sampleRate;
-    if (clip.activateTime < time && time < clip.activateTime + clipLength) {
-        sound += clip.sampleBuffer[Math.floor(clip.sampleRate * (time - clip.activateTime))];
+    if (clip.time < absTime && absTime < clip.time + clipLength) {
+        sound += clip.sampleBuffer[Math.floor(clip.sampleRate * (absTime - clip.time))];
         if (verbose && sound === NaN) {
-            console.log("Warning at time", time, "when clip was active from time", clip.activateTime, "and had sample rate of", clip.sampleRate);
-            console.log("Sound became NaN. Sound that was added was", clip.sampleBuffer[Math.floor(clip.sampleRate * (time - clip.activateTime))], "- It is at index", Math.floor(clip.sampleRate * (time - clip.activateTime)), "in buffer", clip.sampleBuffer);
+            console.log("Warning at time", absTime, "when clip was active from time", clip.time, "and had sample rate of", clip.sampleRate);
+            console.log("Sound became NaN. Sound that was added was", clip.sampleBuffer[Math.floor(clip.sampleRate * (absTime - clip.time))], "- It is at index", Math.floor(clip.sampleRate * (absTime - clip.time)), "in buffer", clip.sampleBuffer);
         }
-        sound *= DontCrackOnMe(time - clip.activateTime, clipLength, 0.01, 0.05);
+
+        sound *= clip.volume;
+        sound *= DontCrackOnMe(absTime - clip.time, clipLength, 0.01, 0.05);
     }
+
+
+    return [sound, sound];
+}
+function GetAmbientClipSound(time, clip, verbose) {
+    var clipLength = clip.sampleBuffer.length / clip.sampleRate;
+    var sound = clip.volume * clip.sampleBuffer[Math.floor(clip.sampleRate * (time % clipLength))];
 
     return [sound, sound];
 }
@@ -150,14 +273,33 @@ export function SoundAction(event) {
 
         noteIndex = (noteIndex + 1) % notes.length;
     }
-    if (event.type === "addClip") {
+    else if (event.type === "addClip") {
         clips[clipIndex] = {
-            activateTime: event.startTime,
+            time: event.startTime,
             sampleBuffer: event.sampleBuffer,
             sampleRate: event.sampleRate,
+            volume: event.volume,
         };
 
         clipIndex = (clipIndex + 1) % clips.length;
+    }
+    else if (event.type === "changeAmbienceVolume") {
+        console.log(ambienceClips, event);
+        ambienceClips[event.index].volume = event.volume;
+    }
+    else if (event.type === "loadAmbienceClip") {
+        if (ambienceClips.length <= event.index)
+            console.error("Ambience clip buffer too small. Tried to insert to position", event.index, "It can be increased in MusicPlayer.js");
+        
+        ambienceClips[event.index] = {
+            time: 0,
+            volume: 0,
+            sampleRate: event.sampleRate,
+            sampleBuffer: event.sampleBuffer,
+        }
+    }
+    else {
+        console.error("Clip type in event", event, "not recognized.");
     }
 }
 
@@ -172,13 +314,20 @@ export function GetWaveAtTime(time, verbose) {
             continue;
         }
         var out = GetInstrumentSound(instrument, notes[i], time, verbose);
-        output[0] += out[0]
-        output[1] += out[1]
+        output[0] += out[0];
+        output[1] += out[1];
     }
     for (var i in clips) {
         var out = GetClipSound(time, clips[i], verbose)
-        output[0] += out[0]
-        output[1] += out[1]
+        if (verbose)
+            console.log("Out came ", out);
+        output[0] += out[0];
+        output[1] += out[1];
+    }
+    for (var i in ambienceClips) {
+        var out = GetAmbientClipSound(time, ambienceClips[i], verbose);
+        output[0] += out[0];
+        output[1] += out[1];
     }
 
     // Force a reduction because it likely is over anyway
