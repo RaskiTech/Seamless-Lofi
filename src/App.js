@@ -1,5 +1,6 @@
 import React, { Component, useState, useRef, useEffect } from 'react';
 import './App.css';
+import './Cards.css';
 import { LoadModel, Predict, GaussianRandomVector } from './Predict';
 import Sequencer from './Sequencer';
 
@@ -41,14 +42,15 @@ function App() {
 
         if (nodeRef === null)
         {
-            // nodeRef.current = await InitializeAudioWorklet(audioContext.current);
-            setNodeRef(await InitializeAudioWorklet(audioContext.current));
+            var newNodeRef = await InitializeAudioWorklet(audioContext.current);
+            setNodeRef(newNodeRef);
+            newNodeRef.port.postMessage({play: true});
         }
+
     }
 
     const SetIsPlaying = (playing) => {
         setIsPlayingState(playing);
-        nodeRef.port.postMessage({play: playing});
     }
 
     const ResetAudio = () => {
@@ -61,18 +63,28 @@ function App() {
     }
 
     return (
-        <div className="App">
+        <>
+            <div className="card-parent top-left-cards">
+                <div className="card">Lofi AI music</div>
+                <div className="card"></div>
+                <div className="card"></div>
+            </div>
+            <div className="card-parent top-right-cards">
+                <div className="card">RaskiTech</div>
+                <div className="card"></div>
+                <div className="card"></div>
+            </div>
+
             <header className="App-header">
 
-                <span>Lofi AI music.</span>
-                <span>...in development. It might not sound like it yet.</span>
                 <span style={{"height": "20px"}}/>
                 <button className="button" onClick={StartAudioStream} type="button" > StartAudioStream </button>
                 <button className="button" disabled={nodeRef === null} onClick={() => SetIsPlaying(!isPlaying)} >{isPlaying ? "Stop" : "Start"}</button>
+                <span className="subText">Use AI to generate never-ending beats to *relax and study to*</span>
                 <Sequencer nodeRef={nodeRef} play={isPlaying} ResetAudio={ResetAudio}/>
 
             </header>
-        </div>
+        </>
     );
 }
 

@@ -1,0 +1,45 @@
+.card-parent {
+  display: grid;
+  row-gap: 10px;
+  text-align: center;
+}
+
+.top-left-cards {
+  margin-top: 20px;
+  position:absolute;
+  transform: translateX(calc(-1 * var(--card-corner-rounding)));
+}
+.top-left-cards > :nth-child(n) {
+  border-right: 10px;
+  border-radius: var(--card-corner-rounding);
+  height: 80px;
+  line-height: 80px;
+  
+  padding-left: var(--card-corner-rounding);
+  width: calc(200px - 30px * var(--n));
+}
+
+.top-right-cards {
+  margin-top: 20px;
+  position:absolute;
+  left:calc(100% - 120px);
+  transform: translateX(calc(var(--card-corner-rounding)));
+}
+.top-right-cards > :nth-child(n) {
+  border-right: 10px;
+  justify-self: end;
+  border-radius: var(--card-corner-rounding);
+  height: 60px;
+  line-height: 60px;
+  
+  padding-right: var(--card-corner-rounding);
+  width: calc(140px - 20px * var(--n));
+}
+
+.top-left-cards > :nth-child(1) { --n: 1; background-color: var(--theme_purple_dark); }
+.top-left-cards > :nth-child(2) { --n: 2; background-color: var(--theme_blue_dark); }
+.top-left-cards > :nth-child(3) { --n: 3; background-color: var(--theme_cyan_dark); }
+
+.top-right-cards > :nth-child(1) { --n: 1; background-color: var(--theme_red_dark); }
+.top-right-cards > :nth-child(2) { --n: 2; background-color: var(--theme_yellow_dark); }
+.top-right-cards > :nth-child(3) { --n: 3; background-color: var(--theme_green_dark); }

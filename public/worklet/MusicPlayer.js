@@ -96,7 +96,17 @@ function GetOscillatorWave(playedTime, endTime, pitch) {
 }
 
 function GetSoundTest(playedTime, endTime, pitch) {
-    return [0, 0];
+    var wave = 0;
+    var hz = pitch * TAU;
+    
+    wave = Math.sin(hz * playedTime);
+
+    wave += 0.5 * Math.sin(0.5 * hz * playedTime - 7);
+    wave += 0.5 * Math.sin(0.5 * hz * playedTime + 7);
+
+    wave *= 0.5 * DontCrackOnMe(playedTime, endTime, 2, 2);
+
+    return [wave, wave];
 }
 
 function GetSynthWave(playedTime, endTime, pitch) {
@@ -165,7 +175,7 @@ function GetMidnightSound(playTime, endTime, pitch) {
         wave *= (endTime - playTime) / releaseTime;
     }
 
-
+    //wave = wave * 1.5;
 
     //wave *= DontCrackOnMe(playTime, endTime, 0.01, 0.01)
     return [wave, wave];
@@ -235,6 +245,8 @@ function GetInstrumentSound(instrument, note, time, verbose) {
         console.log("Time:", time, "Note:", note, "Sound:", sound);
     }
 
+    sound[0] *= note.volume;
+    sound[1] *= note.volume;
     return sound;
 }
 function GetClipSound(absTime, clip, verbose) {
@@ -269,6 +281,7 @@ export function SoundAction(event) {
             pitch: event.pitch,
             activateTime: event.startTime,
             releaseTime: event.releaseTime,
+            volume: event.volume,
         };
 
         noteIndex = (noteIndex + 1) % notes.length;
@@ -284,7 +297,6 @@ export function SoundAction(event) {
         clipIndex = (clipIndex + 1) % clips.length;
     }
     else if (event.type === "changeAmbienceVolume") {
-        console.log(ambienceClips, event);
         ambienceClips[event.index].volume = event.volume;
     }
     else if (event.type === "loadAmbienceClip") {

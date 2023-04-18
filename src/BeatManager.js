@@ -2,16 +2,18 @@
 // Contains all possible beat patterns. Could also make connection patterns that would play between these patterns.
 // One beat pattern is an array of timesteps where each timestep is a number. -1 is nothing, 0 is kick, 1 is clap, 2 is hithat, 3 is percussion, 4 is crash
 const BeatPatterns = [
+    [ 0, -1, 2, -1, 2, -1, 2, -1,   0, 3, 2, -1, 2, -1, 2, 0,   0, -1, 2, -1, 2, -1, 2, 3,   0, -1, 2, -1, 2, -1, 2, -1],
+
+
     [ 0, -1, 2, -1,  1, 3, 2, 0,  0, -1, 2, 3,  1, -1, 2, -1 ],
-    [ 0, 3, 2, 3,  1, 3, 2, 0,  0, 3, 2, 3,  1, 3, 2, 3 ],
 
 ]
 
 // Sample paths and volumes
 const Samples = {
-    "kicks": [["Clips/Kick9.wav", 5.0], ["Clips/Kick12.wav", 6.0], ["Clips/Kick14.wav", 6.0]],
+    "kicks": [["Clips/Kick1.wav", 6.0], ["Clips/Kick2.wav", 6.0]],
     "claps": [["Clips/Clap1.wav", 2.0], ["Clips/Clap3.wav", 2.0], ["Clips/Clap4.wav", 2.0], ["Clips/Clap6.wav", 2.0]],
-    "hithats": [["Clips/Hithat1.wav", 2.0], ["Clips/Hithat3.wav", 2.0], ["Clips/Hithat4.wav", 2.0]],
+    "hithats": [["Clips/Hithat3.wav", 2.0], ["Clips/Hithat4.wav", 2.0]],
     "percussion": [["Clips/Percussion1.wav", 1.5], ["Clips/Percussion2.wav", 1.5], ["Clips/Percussion4.wav", 1.5], ["Clips/Percussion5.wav", 1.5]],
     "crashes": [["Clips/Crash2.wav", 2.0], ["Clips/Crash4.wav", 2.0]],
 }

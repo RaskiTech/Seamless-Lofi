@@ -1,21 +1,47 @@
-body {
-  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+:root {
+  --card-corner-rounding: 10px;
+
+  --theme_black: #2d3436;
+  --theme_dark:#636e72;
+  --theme_light: #b2bec3;
+  --theme_white: #dfe6e9;
+  --theme_red_dark: #d63031;
+  --theme_red_light: #ff7675;
+  --theme_purple_dark: #6c5ce7;
+  --theme_purple_light: #a29bfe;
+  --theme_blue_dark: #0984e3;
+  --theme_blue_light: #74b9ff;
+  --theme_green_dark: #00b894;
+  --theme_green_light:#55efc4;
+  --theme_yellow_dark: #fdcb6e;
+  --theme_yellow_light: #ffeaa7;
+  --theme_cyan_dark: #00cec9;
+  --theme_cyan_light: #81ecec;
+
+
 }
 
-.App {
-  text-align: center;
+body {
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  overflow: hidden;
+  color: white;
+  background-color: #282c34;
+  margin: 0;
 }
 
 .App-header {
-  background-color: #282c34;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);
-  color: white;
 }
+
+div {
+  border-radius: 15px;
+}
+
 
 button {
   margin: 4px;
@@ -35,11 +61,13 @@ button:disabled {
   position: relative;
   height: 200px;
   width: 800px;
+  overflow: hidden;
 }
 
 .pianoRoll > canvas {
   position: absolute;
-  transform: translateX(-50%);
+  border-radius: 15px;
+  /* transform: translateX(-50%); */
 
   height: 200px;
   aspect-ratio: 4;
@@ -51,6 +79,15 @@ button:disabled {
   /* Chromium + Safari */
   image-rendering: pixelated;
 
+}
+
+.songLine {
+  transition: margin-left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.subText {
+  color: var(--theme_light);
+  font-size: 20px;
 }
 
 .pianoRoll > div {

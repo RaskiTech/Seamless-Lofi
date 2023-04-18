@@ -4,9 +4,10 @@ import { LoadModel, Predict, GaussianRandomVector } from './Predict.js';
 import './NoteVisualizer.js';
 import NoteVisualizer from './NoteVisualizer.js';
 import BeatManager from "./BeatManager.js"
+import { time } from '@tensorflow/tfjs';
 
 
-var BPM = 90.0;
+var BPM = 100.0;
 var secondsPerBeat = 1.0 / (BPM / 60.0);
 
 class Sequencer extends Component {
@@ -16,38 +17,39 @@ class Sequencer extends Component {
 
         // State contains all the things that should update visuals
         this.state = {
-            timeStep: 0, // Value between 0 and song length (in this case 64)
+            timeStep: -1, // Value between 0 and song length (in this case 64)
             model: {},
             melodyNoteArray: [],
             loadedClips: {},
             noteTreshhold: 0.32,
         }
+        this.songIterationCount = 0;
         this.timeStepCallbackInterval = null;
         this.ambienceClipNames = {};
         this.beatManager = null;
 
 
         document.addEventListener('keydown', (e) => {
-            if (e.key == 'a')
+            if (e.key === 'a')
                 this.PlayClip("kick");//addNote(this.IndexToPitch(32));
-            if (e.key == 's')
+            if (e.key === 's')
                 this.PlayClip("snare");//addNote(this.IndexToPitch(32 + 2));
-            if (e.key == 'd')
+            if (e.key === 'd')
                 this.PlayClip("percussion");//addNote(this.IndexToPitch(32 + 4));
-            if (e.key == 'f')
-                this.PlayNote("electric", this.IndexToPitch(41-12), 2);
-            if (e.key == 'g')
-                this.PlayNote("electric", this.IndexToPitch(41-12 + 2), 2);
-            if (e.key == 'h')
-                this.PlayNote("electric", this.IndexToPitch(41-12 + 4), 0.5);
-            if (e.key == 'j')
-                this.PlayNote("electric", this.IndexToPitch(41 + 5), 1);
-            if (e.key == 'k')
-                this.PlayNote("synth", this.IndexToPitch(41 + 7), 1);
-            if (e.key == 'l')
-                this.PlayNote("synth", this.IndexToPitch(41 + 12), 1);
-            if (e.key == 'ö')
-                this.PlayNote("synth", this.IndexToPitch(41 - 12), 1);
+            if (e.key === 'f')
+                this.PlayNote("soundTest", this.IndexToPitch(41-7), 5);
+            if (e.key === 'g')
+                this.PlayNote("soundTest", this.IndexToPitch(41-7 + 2), 5);
+            if (e.key === 'h')
+                this.PlayNote("soundTest", this.IndexToPitch(41-7 + 4), 5);
+            if (e.key === 'j')
+                this.PlayNote("soundTest", this.IndexToPitch(41-7 + 5), 5);
+            if (e.key === 'k')
+                this.PlayNote("soundTest", this.IndexToPitch(41-7 + 7), 5);
+            if (e.key === 'l')
+                this.PlayNote("soundTest", this.IndexToPitch(41-7 + 12), 5);
+            if (e.key === 'ö')
+                this.PlayNote("soundTest", this.IndexToPitch(41-7 - 12), 5);
         })
     }
 
@@ -65,8 +67,10 @@ class Sequencer extends Component {
     }
 
     StartedPlaying() {
-        this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames["rain"], volume: 1.5});
-        this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames["cafe"], volume: 0.75});
+        const ambienceVol = 0.5;
+
+        this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames["rain"], volume: 1.5 * ambienceVol});
+        this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames["cafe"], volume: 0.75 * ambienceVol});
     }
     StoppedPlaying() {
         Object.keys(this.ambienceClipNames).forEach(key => {
@@ -164,7 +168,7 @@ class Sequencer extends Component {
         );
     }
 
-    PlayNote(instrumentName, pitch, duration) {
+    PlayNote(instrumentName, pitch, duration, startTime=0, volume=1) {
         this.props.nodeRef.port.postMessage(
             {
                 type: "addNote",
@@ -172,18 +176,12 @@ class Sequencer extends Component {
                 pitch: pitch,
                 startTime: 0.0,
                 releaseTime: duration,
+                volume: volume,
             }
         );
     }
 
-    AdvanceTimeStep() {
-
-        this.setState({timeStep: (this.state.timeStep + 1) % this.state.melodyNoteArray.length})
-        var timeStep = this.state.timeStep;
-
-        // console.log("TimeStep:", timeStep);
-
-        // Melody
+    SendMelodyNotes(timeStep) {
         for (var i = 0; i < this.state.melodyNoteArray[timeStep].length; i++) {
             var wasOnLastTime = timeStep > 0 && this.state.melodyNoteArray[timeStep - 1][i] > this.state.noteTreshhold;
             var onNow = this.state.melodyNoteArray[timeStep][i] > this.state.noteTreshhold;
@@ -197,11 +195,12 @@ class Sequencer extends Component {
                 }
 
                 const timeStepCount = endStep - timeStep; // Perhaps make all notes play a step or two longer
-                this.PlayNote("electric", this.IndexToPitch(i), timeStepCount * secondsPerBeat);
+                this.PlayNote("electric", this.IndexToPitch(i), timeStepCount * secondsPerBeat, 0.0, 0.7);
 
             }
         }
-
+    }
+    AdvanceBeat(timeStep) {
         const AdvanceBeat = () => {
             this.beatManager.AdvanceStep();
             var clip = this.beatManager.GetNowStartingClip();
@@ -215,18 +214,70 @@ class Sequencer extends Component {
                 })
         }
 
-        AdvanceBeat();
-        setTimeout(AdvanceBeat, secondsPerBeat / 2.0 * 1000);
+        // We don't want beats at the first loop
+        if (this.songIterationCount > 0 || timeStep > 31) {
+            AdvanceBeat();
+            setTimeout(AdvanceBeat, secondsPerBeat / 2.0 * 1000);
+        }
+
+    }
+
+    AdvanceTimeStep() {
+
+        var timeStep = this.state.timeStep + 1;
+        if (timeStep >= this.state.melodyNoteArray.length) {
+            timeStep = 0
+            this.songIterationCount++;
+        }
+        this.setState({timeStep: timeStep});
+
+        console.log("TimeStep:", timeStep);
+
+        this.SendMelodyNotes(timeStep);
+        this.AdvanceBeat(timeStep);
+
+        // Base
+        const BaseNoteDuration = 8;
+        if (timeStep % BaseNoteDuration === 0) {
+            var baseNoteIndex = this.GetBaseNoteOfMeasure(timeStep / BaseNoteDuration, BaseNoteDuration);
+            baseNoteIndex = baseNoteIndex - 12;
+            if (baseNoteIndex !== -1) {
+                this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex),      BaseNoteDuration * secondsPerBeat, 0.0, 1.5);
+                this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex + 7),  BaseNoteDuration * secondsPerBeat, 0.2, 1.0);
+                this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex + 12), BaseNoteDuration * secondsPerBeat, 0.4, 0.5);
+
+            }
+
+        }
+
+    }
+
+    GetBaseNoteOfMeasure(measureIndex, BaseNoteDuration) {
+        // Let's test the first one that plays, if multiple play, select the lowest.
+
+        var note = -1;
+        var timeStep = measureIndex * 8;
+        for (; timeStep < measureIndex * 8 + BaseNoteDuration; timeStep++) {
+            for (var i = 0; i < this.state.melodyNoteArray[timeStep].length; i++) {
+                if (this.state.melodyNoteArray[timeStep][i] > this.state.noteTreshhold) {
+                    note = i;
+                    return note;
+                }
+            }
+            timeStep++;
+        }
+
+        return note;
     }
 
     render() {
         if (Object.keys(this.state.model).length === 0)
             LoadModel(this.state);
 
+        /* <button className="button" onClick={() => this.GenerateMelody()}>Predict new</button> */
         return (
             <>
-                <button className="button" onClick={() => this.GenerateMelody()}>Predict new</button>
-                <NoteVisualizer className="NoteVisualizer" notes={this.state.melodyNoteArray} noteTreshhold={this.state.noteTreshhold} timeStep={this.state.timeStep}></NoteVisualizer>
+                <NoteVisualizer className="NoteVisualizer" notes={this.state.melodyNoteArray} noteTreshhold={this.state.noteTreshhold} timeStep={this.state.timeStep + 1}></NoteVisualizer>
             </>
         )
     }
