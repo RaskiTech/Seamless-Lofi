@@ -1,12 +1,14 @@
 .card-parent {
+  margin-top: 20px;
+  position:absolute;
   display: grid;
   row-gap: 10px;
   text-align: center;
+  font-size: 20px;
 }
 
+
 .top-left-cards {
-  margin-top: 20px;
-  position:absolute;
   transform: translateX(calc(-1 * var(--card-corner-rounding)));
 }
 .top-left-cards > :nth-child(n) {
@@ -16,24 +18,38 @@
   line-height: 80px;
   
   padding-left: var(--card-corner-rounding);
-  width: calc(200px - 30px * var(--n));
+  width: calc(300px - 130px * (var(--n) - 1));
+}
+.top-left-cards > :nth-child(1) {
+  font-size: 25px;
+}
+.top-left-cards > :nth-child(1) > :nth-child(1) {
+  line-height: normal;
+  transform: translateY(15px);
+  margin: 0px;
+  font-size: 15px;
+  color: var(--theme_light);
+}
+.top-left-cards > :nth-child(1) > :nth-child(2) {
+  line-height: normal;
+  transform: translateY(15px);
+  margin: 0px;
 }
 
+
 .top-right-cards {
-  margin-top: 20px;
-  position:absolute;
-  left:calc(100% - 120px);
+  left: calc(100% - 160px + 2 * var(--card-corner-rounding));
   transform: translateX(calc(var(--card-corner-rounding)));
 }
 .top-right-cards > :nth-child(n) {
   border-right: 10px;
   justify-self: end;
   border-radius: var(--card-corner-rounding);
-  height: 60px;
-  line-height: 60px;
+  height: 80px;
+  line-height: 80px;
   
   padding-right: var(--card-corner-rounding);
-  width: calc(140px - 20px * var(--n));
+  width: calc(160px - 30px * var(--n));
 }
 
 .top-left-cards > :nth-child(1) { --n: 1; background-color: var(--theme_purple_dark); }

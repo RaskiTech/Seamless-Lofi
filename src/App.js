@@ -42,9 +42,12 @@ function App() {
 
         if (nodeRef === null)
         {
-            var newNodeRef = await InitializeAudioWorklet(audioContext.current);
-            setNodeRef(newNodeRef);
-            newNodeRef.port.postMessage({play: true});
+            var bindFunc = async () => {
+                var newNodeRef = await InitializeAudioWorklet(audioContext.current);
+                newNodeRef.port.postMessage({play: true});
+                setNodeRef(newNodeRef);
+            }
+            bindFunc();
         }
 
     }
@@ -62,12 +65,18 @@ function App() {
         }
     }
 
+    const MiddleButtonPress = () => {
+        if (nodeRef === null)
+            StartAudioStream();
+        else
+            SetIsPlaying(!isPlaying);
+    }
+
     return (
         <>
             <div className="card-parent top-left-cards">
-                <div className="card">Lofi AI music</div>
-                <div className="card"></div>
-                <div className="card"></div>
+                <div className="card"><p>SEAMLESS</p><p>Lofi Generator</p></div>
+                <div className="card">Settings</div>
             </div>
             <div className="card-parent top-right-cards">
                 <div className="card">RaskiTech</div>
@@ -77,9 +86,7 @@ function App() {
 
             <header className="App-header">
 
-                <span style={{"height": "20px"}}/>
-                <button className="button" onClick={StartAudioStream} type="button" > StartAudioStream </button>
-                <button className="button" disabled={nodeRef === null} onClick={() => SetIsPlaying(!isPlaying)} >{isPlaying ? "Stop" : "Start"}</button>
+                <button className={"playButton " + (nodeRef === null ? "playButtonInitialize " : "") + (isPlaying ? "playButtonActive " : "playButtonPause")} onClick={MiddleButtonPress}>{nodeRef === null ? "Initialize" : ""}</button>
                 <span className="subText">Use AI to generate never-ending beats to *relax and study to*</span>
                 <Sequencer nodeRef={nodeRef} play={isPlaying} ResetAudio={ResetAudio}/>
 

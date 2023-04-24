@@ -53,7 +53,7 @@ class Sequencer extends Component {
         })
     }
 
-    AudioStreamStarted() {
+    async AudioStreamStarted() {
         this.LoadAmbienceClip("rain", "Clips/AmbianceRain.wav",         0);
         this.LoadAmbienceClip("waves", "Clips/AmbianceWaves.wav",       1);
         this.LoadAmbienceClip("birds", "Clips/AmbianceBirds.wav",       2);
@@ -61,7 +61,6 @@ class Sequencer extends Component {
         this.LoadAmbienceClip("cafe", "Clips/AmbianceCafe.wav",         4);
 
         this.beatManager = new BeatManager();
-
 
         this.GenerateMelody();
     }
@@ -140,6 +139,7 @@ class Sequencer extends Component {
         this.setState({
             melodyNoteArray: arr
         });
+        console.log("Set melody" + this.state);
 
     }
 
@@ -231,8 +231,6 @@ class Sequencer extends Component {
         }
         this.setState({timeStep: timeStep});
 
-        console.log("TimeStep:", timeStep);
-
         this.SendMelodyNotes(timeStep);
         this.AdvanceBeat(timeStep);
 
@@ -274,10 +272,10 @@ class Sequencer extends Component {
         if (Object.keys(this.state.model).length === 0)
             LoadModel(this.state);
 
-        /* <button className="button" onClick={() => this.GenerateMelody()}>Predict new</button> */
         return (
             <>
-                <NoteVisualizer className="NoteVisualizer" notes={this.state.melodyNoteArray} noteTreshhold={this.state.noteTreshhold} timeStep={this.state.timeStep + 1}></NoteVisualizer>
+                <NoteVisualizer notes={this.state.melodyNoteArray} noteTreshhold={this.state.noteTreshhold} timeStep={this.state.timeStep + 1}></NoteVisualizer>
+                <button className="footnote" onClick={this.GenerateMelody.bind(this)}>Get a new song</button>
             </>
         )
     }
