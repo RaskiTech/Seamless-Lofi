@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
 import './App.css';
-import { LoadModel, Predict, GaussianRandomVector } from './Predict.js';
+import { LoadModel, Predict, GaussianRandomVector, GaussianRandomValue } from './Predict.js';
 import './NoteVisualizer.js';
 import NoteVisualizer from './NoteVisualizer.js';
 import BeatManager from "./BeatManager.js"
-import { time } from '@tensorflow/tfjs';
+import { rand, time } from '@tensorflow/tfjs';
 
 
-var BPM = 100.0;
+var BPM = 180.0; // 100
 var secondsPerBeat = 1.0 / (BPM / 60.0);
 
 class Sequencer extends Component {
@@ -19,9 +19,12 @@ class Sequencer extends Component {
         this.state = {
             timeStep: -1, // Value between 0 and song length (in this case 64)
             model: {},
-            melodyNoteArray: [],
             loadedClips: {},
             noteTreshhold: 0.32,
+
+            generatorArray: [],
+            melodyNoteArray: [],
+            nextMelodyNoteArray: [],
         }
         this.songIterationCount = 0;
         this.timeStepCallbackInterval = null;
@@ -59,10 +62,14 @@ class Sequencer extends Component {
         this.LoadAmbienceClip("birds", "Clips/AmbianceBirds.wav",       2);
         this.LoadAmbienceClip("crickets", "Clips/AmbianceCrickets.wav", 3);
         this.LoadAmbienceClip("cafe", "Clips/AmbianceCafe.wav",         4);
-
         this.beatManager = new BeatManager();
 
-        this.GenerateMelody();
+        this.props.nodeRef.port.postMessage({
+            type: "volume",
+            value: this.props.volume,
+        });
+
+        this.GenerateNewMelody();
     }
 
     StartedPlaying() {
@@ -78,7 +85,9 @@ class Sequencer extends Component {
     }
 
     componentDidUpdate(prevProps) {
-        if (this.props.nodeRef !== null && prevProps.nodeRef === null)
+        if (this.props.nodeRef === null)
+            return;
+        if (prevProps.nodeRef === null)
             this.AudioStreamStarted();
 
         // Play & Pause
@@ -94,6 +103,13 @@ class Sequencer extends Component {
                     clearInterval(this.timeStepCallbackInterval);
                 this.timeStepCallbackInterval = null;
             }
+        }
+
+        if (this.props.volume != prevProps.volume) {
+            this.props.nodeRef.port.postMessage({
+                type: "volume",
+                value: this.props.volume,
+            });
         }
     }
 
@@ -134,13 +150,41 @@ class Sequencer extends Component {
     }
 
 
-    async GenerateMelody() {
-        var arr = await Predict(this.state.model, GaussianRandomVector(0, 1));
+    async GenerateNewMelody() {
+        var vec = GaussianRandomVector(0, 1);
+        var arr = await Predict(this.state.model, vec);
         this.setState({
-            melodyNoteArray: arr
+            melodyNoteArray: arr,
+            generatorArray: vec,
         });
-        console.log("Set melody" + this.state);
+        console.log("Set melody", this.state);
+    }
+    async GenerateModifiedMelody() {
+        if (this.props.melodyChangeSpeed === 0)
+            return;
 
+        var vec = this.state.generatorArray;
+        for (var i = 0; i < this.props.melodyChangeSpeed; i++) {
+            var randIndex = Math.floor(Math.random() * vec.length)
+
+            vec[randIndex] = GaussianRandomValue(0, 1);
+        }
+
+        var arr = await Predict(this.state.model, vec);
+        this.setState({
+            nextMelodyNoteArray: arr,
+            generatorArray: vec,
+        });
+
+    }
+    SwapMelodyBuffers() {
+        if (this.state.nextMelodyNoteArray.length === 0)
+            return;
+
+        this.setState({
+            melodyNoteArray: this.state.nextMelodyNoteArray,
+            nextMelodyNoteArray: [],
+        })
     }
 
     // Converts melodyNoteArray index to hz.
@@ -234,6 +278,12 @@ class Sequencer extends Component {
         this.SendMelodyNotes(timeStep);
         this.AdvanceBeat(timeStep);
 
+        /*
+        if (timeStep % 8 === 0) {
+            this.PlayNote("white", 0, 0, 0);
+        }
+        */
+
         // Base
         const BaseNoteDuration = 8;
         if (timeStep % BaseNoteDuration === 0) {
@@ -243,9 +293,15 @@ class Sequencer extends Component {
                 this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex),      BaseNoteDuration * secondsPerBeat, 0.0, 1.5);
                 this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex + 7),  BaseNoteDuration * secondsPerBeat, 0.2, 1.0);
                 this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex + 12), BaseNoteDuration * secondsPerBeat, 0.4, 0.5);
-
             }
 
+        }
+
+        if (timeStep === 0) {
+            this.GenerateModifiedMelody();
+        }
+        if (timeStep === 63) {
+            this.SwapMelodyBuffers();
         }
 
     }
@@ -275,7 +331,7 @@ class Sequencer extends Component {
         return (
             <>
                 <NoteVisualizer notes={this.state.melodyNoteArray} noteTreshhold={this.state.noteTreshhold} timeStep={this.state.timeStep + 1}></NoteVisualizer>
-                <button className="footnote" onClick={this.GenerateMelody.bind(this)}>Get a new song</button>
+                <button className="footnote" disabled={this.props.nodeRef === null} onClick={this.GenerateNewMelody.bind(this)}>{this.props.nodeRef === null ? "" : "Get a new song"}</button>
             </>
         )
     }

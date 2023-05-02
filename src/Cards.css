@@ -16,12 +16,13 @@
   border-radius: var(--card-corner-rounding);
   height: 80px;
   line-height: 80px;
+  font-size: 20px;
+  margin: 0px;
+  padding: 0px;
+  color: white;
   
   padding-left: var(--card-corner-rounding);
   width: calc(300px - 130px * (var(--n) - 1));
-}
-.top-left-cards > :nth-child(1) {
-  font-size: 25px;
 }
 .top-left-cards > :nth-child(1) > :nth-child(1) {
   line-height: normal;
@@ -31,6 +32,7 @@
   color: var(--theme_light);
 }
 .top-left-cards > :nth-child(1) > :nth-child(2) {
+  font-size: 25px;
   line-height: normal;
   transform: translateY(15px);
   margin: 0px;
@@ -47,6 +49,7 @@
   border-radius: var(--card-corner-rounding);
   height: 80px;
   line-height: 80px;
+  font-size: 20px;
   
   padding-right: var(--card-corner-rounding);
   width: calc(160px - 30px * var(--n));

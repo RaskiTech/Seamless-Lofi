@@ -40,8 +40,6 @@ class BeatManager {
 
     AdvanceStep() {
         this.timeStep = (this.timeStep + 1) % this.pattern.length;
-
-
     }
 
     GetNowStartingClip() {

@@ -24,7 +24,7 @@
 
 }
 
-body {
+body, button {
   font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
   overflow: hidden;
   color: white;
@@ -68,6 +68,12 @@ button {
 
   border-radius: 50%;
 
+}
+.playButton:focus-visible {
+  outline-style: solid;
+  outline-color: var(--theme_dark);
+  outline-width: 5px;
+  outline-offset: 10px;
 }
 .playButtonInitialize {
   font-size: 40px;
@@ -163,7 +169,51 @@ button:disabled {
   background: none;
   text-decoration: underline;
   font-size: 17px;
+  background-color: transparent;
   color: var(--theme_dark);
   margin-top: 0px;
   padding-top: 0px;
+
+  /*
+  outline-width: 0;
+  outline-color: var(--theme_dark);
+  outline-color: white;
+  */
+  outline-width: 0;
+}
+.footnote:focus {
+  outline-style: solid;
+  outline-color: var(--theme_dark);
+  outline-width: 3px;
+}
+.footnote:disabled {
+  background-color: transparent; /* Override button:disabled */
+}
+
+
+
+/* ///////////////////////////////// */
+/* ///      Settings Menu        /// */
+/* ///////////////////////////////// */
+
+.settingsContainer {
+  background-color: var(--theme_cyan_dark);
+  /* overflow: hidden */
+  height: 200px;
+  width: 150px;
+  position: absolute;
+  top: 200px;
+  padding: 10px;
+  transition: margin-left 0.3s
+}
+.settingsOpen { margin-left: 10px; }
+.settingsClosed { margin-left: -200px; }
+
+.settingsContainer > p {
+  margin: 0px;
+}
+.settingsContainer > input {
+  border-radius: 50%;
+  background-color: var(--theme_green_dark);
+  background: var(--theme_green_dark);
 }

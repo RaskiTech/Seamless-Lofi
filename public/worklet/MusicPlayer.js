@@ -2,7 +2,6 @@ const TAU = 2 * Math.PI;
 const twoOverPI = 2.0 / Math.PI;
 const halfPI = Math.PI / 2;
 
-const MASTER_VOLUME = 0.7;
 const instruments = {
     "synth": {
         waveFunction: GetSynthWave,
@@ -19,6 +18,9 @@ const instruments = {
     "noise": {
         waveFunction: GetNoise,
     },
+    "white": {
+        waveFunction: GetWhite,
+    }
 };
 
 // Note should contain:
@@ -34,6 +36,8 @@ let noteIndex;
 // sampleRate
 let clips;
 let clipIndex;
+
+let masterVolume = 0.8;
 
 // These clips are loaded at the start and stay loaded. Primarely used for ambience
 // Looping clips should contain:
@@ -56,14 +60,22 @@ export function ResetAudioData() {
 function DontCrackOnMe(time, endTime, attackTime=0.025, releaseTime=0.025) {
     if (time > endTime)
         return 0;
-    if (time < attackTime)
+    if (time < attackTime) {
+        if (time < 0)
+            return 0;
         return time / attackTime;
+    }
     if (time + releaseTime > endTime) {
         return (endTime - time) / releaseTime;
     }
     return 1;
 }
 
+function GetWhite(playedTime, endTime, pitch) {
+    var wave = 2 * Math.random() * Math.exp(playedTime * -0.3);
+
+    return [wave, wave];
+}
 function GetNoise(playedTime, endTime, pitch) {
 
     if (playedTime > endTime)
@@ -275,43 +287,47 @@ function GetAmbientClipSound(time, clip, verbose) {
 }
 
 export function SoundAction(event) {
-    if (event.type === "addNote") {
-        notes[noteIndex] = {
-            instrument: event.instrument,
-            pitch: event.pitch,
-            activateTime: event.startTime,
-            releaseTime: event.releaseTime,
-            volume: event.volume,
-        };
+    switch (event.type) {
+        case "addNote":
+            notes[noteIndex] = {
+                instrument: event.instrument,
+                pitch: event.pitch,
+                activateTime: event.startTime,
+                releaseTime: event.releaseTime,
+                volume: event.volume,
+            };
 
-        noteIndex = (noteIndex + 1) % notes.length;
-    }
-    else if (event.type === "addClip") {
-        clips[clipIndex] = {
-            time: event.startTime,
-            sampleBuffer: event.sampleBuffer,
-            sampleRate: event.sampleRate,
-            volume: event.volume,
-        };
+            noteIndex = (noteIndex + 1) % notes.length;
+            break;
+        case "addClip":
+            clips[clipIndex] = {
+                time: event.startTime,
+                sampleBuffer: event.sampleBuffer,
+                sampleRate: event.sampleRate,
+                volume: event.volume,
+            };
 
-        clipIndex = (clipIndex + 1) % clips.length;
-    }
-    else if (event.type === "changeAmbienceVolume") {
-        ambienceClips[event.index].volume = event.volume;
-    }
-    else if (event.type === "loadAmbienceClip") {
-        if (ambienceClips.length <= event.index)
-            console.error("Ambience clip buffer too small. Tried to insert to position", event.index, "It can be increased in MusicPlayer.js");
-        
-        ambienceClips[event.index] = {
-            time: 0,
-            volume: 0,
-            sampleRate: event.sampleRate,
-            sampleBuffer: event.sampleBuffer,
-        }
-    }
-    else {
-        console.error("Clip type in event", event, "not recognized.");
+            clipIndex = (clipIndex + 1) % clips.length;
+            break;
+        case "changeAmbienceVolume":
+            ambienceClips[event.index].volume = event.volume;
+            break;
+        case "loadAmbienceClip":
+            if (ambienceClips.length <= event.index)
+                console.error("Ambience clip buffer too small. Tried to insert to position", event.index, "It can be increased in MusicPlayer.js");
+            
+            ambienceClips[event.index] = {
+                time: 0,
+                volume: 0,
+                sampleRate: event.sampleRate,
+                sampleBuffer: event.sampleBuffer,
+            }
+            break;
+        case "volume":
+            masterVolume = event.value;
+            break;
+        default:
+            console.error("Clip type in event", event, "not recognized.");
     }
 }
 
@@ -343,7 +359,7 @@ export function GetWaveAtTime(time, verbose) {
     }
 
     // Force a reduction because it likely is over anyway
-    var loudness = 0.2 * MASTER_VOLUME;
+    var loudness = 0.18 * masterVolume;
     output[0] *= loudness;
     output[1] *= loudness;
 

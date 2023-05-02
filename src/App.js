@@ -3,6 +3,7 @@ import './App.css';
 import './Cards.css';
 import { LoadModel, Predict, GaussianRandomVector } from './Predict';
 import Sequencer from './Sequencer';
+import SettingsMenu from './SettingsMenu';
 
 
 const InitializeAudioWorklet = async (audioContext) => {
@@ -28,6 +29,9 @@ function App() {
     const [isPlaying, setIsPlayingState] = useState(false);
     const audioContext = useRef(null);
     const [nodeRef, setNodeRef] = useState(null);
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [volume, setVolume] = useState(0.8);
+    const [changeSpeed, setChangeSpeed] = useState(2);
 
     const StartAudioStream = async () =>
     {
@@ -71,24 +75,28 @@ function App() {
         else
             SetIsPlaying(!isPlaying);
     }
+    const settingsButtonClicked = () => {
+        setSettingsOpen(!settingsOpen);
+    }
 
     return (
         <>
             <div className="card-parent top-left-cards">
                 <div className="card"><p>SEAMLESS</p><p>Lofi Generator</p></div>
-                <div className="card">Settings</div>
+                <button className="card" onClick={settingsButtonClicked}>Settings</button>
             </div>
             <div className="card-parent top-right-cards">
                 <div className="card">RaskiTech</div>
                 <div className="card"></div>
                 <div className="card"></div>
             </div>
+            <SettingsMenu open={settingsOpen} defaultVolume={volume} defaultSpeed={changeSpeed} onSpeedChange={setChangeSpeed} onVolumeChange={setVolume}/>
 
             <header className="App-header">
 
                 <button className={"playButton " + (nodeRef === null ? "playButtonInitialize " : "") + (isPlaying ? "playButtonActive " : "playButtonPause")} onClick={MiddleButtonPress}>{nodeRef === null ? "Initialize" : ""}</button>
                 <span className="subText">Use AI to generate never-ending beats to *relax and study to*</span>
-                <Sequencer nodeRef={nodeRef} play={isPlaying} ResetAudio={ResetAudio}/>
+                <Sequencer nodeRef={nodeRef} play={isPlaying} volume={volume} melodyChangeSpeed={changeSpeed} ResetAudio={ResetAudio}/>
 
             </header>
         </>
