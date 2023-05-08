@@ -7,7 +7,7 @@ import BeatManager from "./BeatManager.js"
 import { rand, time } from '@tensorflow/tfjs';
 
 
-var BPM = 180.0; // 100
+var BPM = 100.0; // 100
 var secondsPerBeat = 1.0 / (BPM / 60.0);
 
 class Sequencer extends Component {
@@ -157,13 +157,17 @@ class Sequencer extends Component {
             melodyNoteArray: arr,
             generatorArray: vec,
         });
+        this.state.generatorArray = vec; // Update this for this frame also, because it will be used in a functin
         console.log("Set melody", this.state);
+
+        this.GenerateModifiedMelody();
     }
     async GenerateModifiedMelody() {
         if (this.props.melodyChangeSpeed === 0)
             return;
 
         var vec = this.state.generatorArray;
+
         for (var i = 0; i < this.props.melodyChangeSpeed; i++) {
             var randIndex = Math.floor(Math.random() * vec.length)
 

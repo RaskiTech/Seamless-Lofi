@@ -1,4 +1,5 @@
 import react, { useState } from 'react';
+import './settings.css';
 
 
 function SettingsMenu(props) {
@@ -8,10 +9,14 @@ function SettingsMenu(props) {
     return (
         <div className={"settingsContainer " + (props.open ? "settingsOpen" : "settingsClosed")}>
             <p>Volume</p>
-            <input disabled={!props.open} type="range" min="0" max="1" step="0.1" defaultValue={props.defaultVolume} onChange={(event) => props.onVolumeChange(event.target.value)}/>
+            <div className="sliderFrame">
+                <input disabled={!props.open} type="range" min="0" max="1" step="0.05" defaultValue={props.defaultVolume} onChange={(event) => props.onVolumeChange(event.target.value)}/>
+            </div>
 
-            <p>Change speed</p>
-            <input disabled={!props.open} type="range" min="0" max="5" step="1" defaultValue={props.defaultSpeed} onChange={(event) => props.onSpeedChange(event.target.value)}/>
+            <p>Changing speed</p>
+            <div className="sliderFrame">
+                <input disabled={!props.open} type="range" min="0" max="5" step="1" defaultValue={props.defaultSpeed} onChange={(event) => props.onSpeedChange(event.target.value)}/>
+            </div>
         </div>
     )
 }

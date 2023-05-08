@@ -42,11 +42,9 @@ class BypassProcessor extends AudioWorkletProcessor {
     process(inputs, outputs, params) {
         var verbose = VERBOSE && this.phase % 10000 === 0;
 
-
         if(!this.isPlaying) {
             return true;
         }
-
 
         const output = outputs[0];
 

@@ -68,6 +68,8 @@ button {
 
   border-radius: 50%;
 
+  cursor: pointer;
+
 }
 .playButton:focus-visible {
   outline-style: solid;
@@ -188,32 +190,4 @@ button:disabled {
 }
 .footnote:disabled {
   background-color: transparent; /* Override button:disabled */
-}
-
-
-
-/* ///////////////////////////////// */
-/* ///      Settings Menu        /// */
-/* ///////////////////////////////// */
-
-.settingsContainer {
-  background-color: var(--theme_cyan_dark);
-  /* overflow: hidden */
-  height: 200px;
-  width: 150px;
-  position: absolute;
-  top: 200px;
-  padding: 10px;
-  transition: margin-left 0.3s
-}
-.settingsOpen { margin-left: 10px; }
-.settingsClosed { margin-left: -200px; }
-
-.settingsContainer > p {
-  margin: 0px;
-}
-.settingsContainer > input {
-  border-radius: 50%;
-  background-color: var(--theme_green_dark);
-  background: var(--theme_green_dark);
 }

@@ -48,7 +48,7 @@ let masterVolume = 0.8;
 let ambienceClips;
 
 export function ResetAudioData() { 
-    notes = new Array(30); 
+    notes = new Array(20); 
     noteIndex = 0;
     clips = new Array(20); 
     clipIndex = 0;

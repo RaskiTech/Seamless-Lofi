@@ -58,6 +58,7 @@ function App() {
 
     const SetIsPlaying = (playing) => {
         setIsPlayingState(playing);
+        nodeRef.port.postMessage({play: playing});
     }
 
     const ResetAudio = () => {
