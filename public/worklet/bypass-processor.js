@@ -59,7 +59,9 @@ class BypassProcessor extends AudioWorkletProcessor {
         if (verbose)
             console.log("Out:", outputs[0][0][0], "Playing:", this.isPlaying);
 
-        if (outputs[0][0][0] > 1)
+        if (outputs[0][0][0] === NaN)
+            console.log("Audio is NaN");
+        else if (outputs[0][0][0] > 1)
             console.log("Sent audio is over 1. Consider lowerind some volumes.");
 
         return this.isPlaying;

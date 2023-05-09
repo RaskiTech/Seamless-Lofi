@@ -11,7 +11,7 @@ const BeatPatterns = [
 
 // Sample paths and volumes
 const Samples = {
-    "kicks": [["Clips/Kick1.wav", 6.0], ["Clips/Kick2.wav", 6.0]],
+    "kicks": [["Clips/Kick1.wav", 10.0], ["Clips/Kick2.wav", 10.0]],
     "claps": [["Clips/Clap1.wav", 2.0], ["Clips/Clap3.wav", 2.0], ["Clips/Clap4.wav", 2.0], ["Clips/Clap6.wav", 2.0]],
     "hithats": [["Clips/Hithat3.wav", 1.0], ["Clips/Hithat4.wav", 1.0]],
     "percussion": [["Clips/Percussion1.wav", 1.5], ["Clips/Percussion2.wav", 1.5], ["Clips/Percussion4.wav", 1.5], ["Clips/Percussion5.wav", 1.5]],

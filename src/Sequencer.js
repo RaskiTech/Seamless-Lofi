@@ -7,8 +7,8 @@ import BeatManager from "./BeatManager.js"
 import { rand, time } from '@tensorflow/tfjs';
 
 
-var BPM = 100.0; // 100
-var secondsPerBeat = 1.0 / (BPM / 60.0);
+const BPM = 100.0; // 100
+const secondsPerBeat = 1.0 / (BPM / 60.0);
 
 class Sequencer extends Component {
 
@@ -40,9 +40,9 @@ class Sequencer extends Component {
             if (e.key === 'd')
                 this.PlayClip("percussion");//addNote(this.IndexToPitch(32 + 4));
             if (e.key === 'f')
-                this.PlayNote("soundTest", this.IndexToPitch(41-7), 5);
+                this.PlayNote("midnight", this.IndexToPitch(41-7), 5);
             if (e.key === 'g')
-                this.PlayNote("soundTest", this.IndexToPitch(41-7 + 2), 5);
+                this.PlayNote("midnight", this.IndexToPitch(41-7 + 2), 5);
             if (e.key === 'h')
                 this.PlayNote("soundTest", this.IndexToPitch(41-7 + 4), 5);
             if (e.key === 'j')
@@ -73,7 +73,7 @@ class Sequencer extends Component {
     }
 
     StartedPlaying() {
-        const ambienceVol = 0.5;
+        const ambienceVol = 0.4; // 0.5
 
         this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames["rain"], volume: 1.5 * ambienceVol});
         this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames["cafe"], volume: 0.75 * ambienceVol});
@@ -216,14 +216,14 @@ class Sequencer extends Component {
         );
     }
 
-    PlayNote(instrumentName, pitch, duration, startTime=0, volume=1) {
+    PlayNote(instrumentName, pitch, duration, startTime=0.0, volume=1.0) {
         this.props.nodeRef.port.postMessage(
             {
                 type: "addNote",
                 instrument: instrumentName,
                 pitch: pitch,
-                startTime: 0.0,
-                releaseTime: duration,
+                startTime: startTime,
+                releaseTime: duration + startTime,
                 volume: volume,
             }
         );
@@ -269,6 +269,26 @@ class Sequencer extends Component {
         }
 
     }
+    PlayBase(timeStep) {
+        const BaseNoteDuration = 8;
+        if (timeStep % BaseNoteDuration === 0) {
+            var baseNoteIndex = this.GetBaseNoteOfMeasure(timeStep / BaseNoteDuration, BaseNoteDuration);
+            baseNoteIndex = baseNoteIndex - 12;
+            if (baseNoteIndex !== -1) {
+                this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex),      BaseNoteDuration * secondsPerBeat, 0.0, 2.0);
+                this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex + 7),  BaseNoteDuration * secondsPerBeat, 0.2, 1.4);
+                this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex + 12), BaseNoteDuration * secondsPerBeat, 0.4, 1.0);
+            }
+
+        }
+    }
+    PlayNoise(timeStep) {
+        const before = 2;
+        if ((timeStep + before) % 32 === 0) {
+            console.log("Starting play");
+            this.PlayNote("noise", 0, before * secondsPerBeat, 0);
+        }
+    }
 
     AdvanceTimeStep() {
 
@@ -279,35 +299,16 @@ class Sequencer extends Component {
         }
         this.setState({timeStep: timeStep});
 
+        if (timeStep === 0)
+            this.GenerateModifiedMelody();
+        if (timeStep === 63)
+            this.SwapMelodyBuffers();
+
+
         this.SendMelodyNotes(timeStep);
         this.AdvanceBeat(timeStep);
-
-        /*
-        if (timeStep % 8 === 0) {
-            this.PlayNote("white", 0, 0, 0);
-        }
-        */
-
-        // Base
-        const BaseNoteDuration = 8;
-        if (timeStep % BaseNoteDuration === 0) {
-            var baseNoteIndex = this.GetBaseNoteOfMeasure(timeStep / BaseNoteDuration, BaseNoteDuration);
-            baseNoteIndex = baseNoteIndex - 12;
-            if (baseNoteIndex !== -1) {
-                this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex),      BaseNoteDuration * secondsPerBeat, 0.0, 1.5);
-                this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex + 7),  BaseNoteDuration * secondsPerBeat, 0.2, 1.0);
-                this.PlayNote("midnight", this.IndexToPitch(baseNoteIndex + 12), BaseNoteDuration * secondsPerBeat, 0.4, 0.5);
-            }
-
-        }
-
-        if (timeStep === 0) {
-            this.GenerateModifiedMelody();
-        }
-        if (timeStep === 63) {
-            this.SwapMelodyBuffers();
-        }
-
+        this.PlayBase(timeStep);
+        // this.PlayNoise(timeStep);
     }
 
     GetBaseNoteOfMeasure(measureIndex, BaseNoteDuration) {

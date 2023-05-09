@@ -18,9 +18,6 @@ const instruments = {
     "noise": {
         waveFunction: GetNoise,
     },
-    "white": {
-        waveFunction: GetWhite,
-    }
 };
 
 // Note should contain:
@@ -71,23 +68,32 @@ function DontCrackOnMe(time, endTime, attackTime=0.025, releaseTime=0.025) {
     return 1;
 }
 
-function GetWhite(playedTime, endTime, pitch) {
-    var wave = 2 * Math.random() * Math.exp(playedTime * -0.3);
-
-    return [wave, wave];
-}
+var lastRand = 0;
+// EndTime is the loudest time
 function GetNoise(playedTime, endTime, pitch) {
+    const dropoffDuration = 4.0;
 
-    if (playedTime > endTime)
+    var volume = 0;
+    if (playedTime > 0)
+    {
+        if (playedTime > endTime) {
+            if (playedTime - dropoffDuration < endTime)
+                volume = -(1/dropoffDuration) * (playedTime - endTime) + 1;
+        }
+        else {
+            var risePercentage = playedTime / endTime;
+            volume = risePercentage * risePercentage;
+        }
+    }
+    if (volume === 0)
         return [0, 0];
 
-    var velocity = 0.3;
+    var rand = Math.random();
+    var wave = rand - lastRand;
+    lastRand = rand;
 
-    var wave = Math.random();
-
-    wave *= velocity;
-    
-    return [wave, wave]
+    wave *= volume;
+    return [wave, wave];
 }
 
 function GetOscillatorWave(playedTime, endTime, pitch) {
@@ -154,7 +160,6 @@ function GetSynthWave(playedTime, endTime, pitch) {
 
     var left = GetSpeakerWave(0, playedTime, functionPitch) + GetSpeakerWave(10, playedTime, functionPitch * 1.01);
     var right = GetSpeakerWave(23, playedTime, functionPitch) + GetSpeakerWave(12.3, playedTime, functionPitch * 1.01);
-    //var right = left//GetSpeakerWave(10);
 
     var loudness = 0.0000000005 * 
         /* Attack */ (3 * Math.exp(-10 * playedTime) + 1);
@@ -163,21 +168,26 @@ function GetSynthWave(playedTime, endTime, pitch) {
     left *= loudness * (1 + 0.2 * Math.sin(         playedTime * 60))
     right *= loudness * (1 + 0.2 * Math.sin(3.141 + playedTime * 60))
 
-
     return [left, right];
 }
 
 function GetMidnightSound(playTime, endTime, pitch) {
+    if (playTime < 0)
+        return [0, 0];
+
     var hz = pitch * TAU;
 
     var wave = Math.sin(playTime * hz);
     
-    // TODO: Make repeat
+    const interval = 0.5;
+    const repeatFalloff = 0.5;
 
-    const interval = 0.5
-    var repeatCount = Math.floor(playTime/interval)
-    var repeatingTime = playTime - repeatCount * interval
-    wave *= Math.exp(playTime * -4 / (repeatCount + 1))
+    var n = 30; // Higher n => sharper sawtooth peaks
+    var x = (playTime * 2 / interval) % 2 - 1;
+    var smoothSawtooth = (-x * (1 - Math.pow(x, 2 * n)) + 1) / 2;
+    var volume = Math.exp(-repeatFalloff * playTime) * smoothSawtooth;
+
+    wave *= volume;
 
     // Falloff
     const releaseTime = 0.1
@@ -187,7 +197,7 @@ function GetMidnightSound(playTime, endTime, pitch) {
         wave *= (endTime - playTime) / releaseTime;
     }
 
-    //wave = wave * 1.5;
+    wave *= 1.0;
 
     //wave *= DontCrackOnMe(playTime, endTime, 0.01, 0.01)
     return [wave, wave];
@@ -195,7 +205,6 @@ function GetMidnightSound(playTime, endTime, pitch) {
 
 function GetElectricSynth(playTime, endTime, pitch) {
     var hz = pitch * TAU;
-
 
     var f1v = 2.8163;
     var f2v = 1.1698;
@@ -211,7 +220,6 @@ function GetElectricSynth(playTime, endTime, pitch) {
     wave += f4v * Math.sin(4 * hz * playTime);
     wave += f5v * Math.sin(5 * hz * playTime);
     wave += f6v * Math.sin(6 * hz * playTime);
-    
     wave = wave * wave + 3 * wave;
 
     // Velocity
@@ -232,8 +240,6 @@ function GetElectricSynth(playTime, endTime, pitch) {
         velocityRight *= releaseVelocity;
 
     }
-
-
 
     const attackTime = 0.02;
     if (playTime < attackTime)
