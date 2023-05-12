@@ -71,18 +71,18 @@ function DontCrackOnMe(time, endTime, attackTime=0.025, releaseTime=0.025) {
 var lastRand = 0;
 // EndTime is the loudest time
 function GetNoise(playedTime, endTime, pitch) {
-    const dropoffDuration = 4.0;
+    const dropoffDuration = 10.0;
 
     var volume = 0;
     if (playedTime > 0)
     {
         if (playedTime > endTime) {
             if (playedTime - dropoffDuration < endTime)
-                volume = -(1/dropoffDuration) * (playedTime - endTime) + 1;
+                volume = Math.exp(-(5/dropoffDuration) * playedTime);
         }
         else {
             var risePercentage = playedTime / endTime;
-            volume = risePercentage * risePercentage;
+            volume = 0.75 * risePercentage * risePercentage;
         }
     }
     if (volume === 0)
@@ -179,7 +179,7 @@ function GetMidnightSound(playTime, endTime, pitch) {
 
     var wave = Math.sin(playTime * hz);
     
-    const interval = 0.5;
+    const interval = 0.6;
     const repeatFalloff = 0.5;
 
     var n = 30; // Higher n => sharper sawtooth peaks

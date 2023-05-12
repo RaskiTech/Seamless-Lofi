@@ -75,8 +75,10 @@ class Sequencer extends Component {
     StartedPlaying() {
         const ambienceVol = 0.4; // 0.5
 
-        this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames["rain"], volume: 1.5 * ambienceVol});
-        this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames["cafe"], volume: 0.75 * ambienceVol});
+        // this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames["rain"], volume: 1.5 * ambienceVol});
+        // this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames["cafe"], volume: 0.75 * ambienceVol});
+        // this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames["birds"], volume: 1.5 * ambienceVol});
+        this.ChangeToRandomAmbienceClips();
     }
     StoppedPlaying() {
         Object.keys(this.ambienceClipNames).forEach(key => {
@@ -148,6 +150,56 @@ class Sequencer extends Component {
         var blob = await response.blob();
         reader.readAsArrayBuffer(blob);
     }
+    ChangeToRandomAmbienceClips() {
+        const ambienceVol = 0.4;
+        const possibilities = [
+            {
+                "rain":     ambienceVol * 0,
+                "birds":    ambienceVol * 1.5,
+                "waves":    ambienceVol * 0,
+                "crickets": ambienceVol * 0,
+                "cafe":     ambienceVol * 0,
+            },
+            {
+                "rain":     ambienceVol * 1.5,
+                "birds":    ambienceVol * 0,
+                "waves":    ambienceVol * 0,
+                "crickets": ambienceVol * 0,
+                "cafe":     ambienceVol * 0.75,
+            },
+        ]
+
+        this.ChangeAmbienceClips(possibilities[Math.floor(Math.random() * possibilities.length)], 5.0);
+
+    }
+    async ChangeAmbienceClips(keyVolumePairs, duration)
+    {
+        const smoothStepCount = 10;
+        if (this.currentKeyVolumePairs === undefined) {
+            this.currentKeyVolumePairs = {};
+        }
+        
+        var millisecondWaitTime = duration / smoothStepCount * 1000;
+        for (var i = 0; i < smoothStepCount; i++)
+        {
+
+            var percent = (i + 1) / smoothStepCount;
+            console.log("New:", percent, "percent");
+            for (const [key, volume] of Object.entries(keyVolumePairs))
+            {
+                if (this.currentKeyVolumePairs[key] === undefined)
+                    this.currentKeyVolumePairs[key] = 0;
+
+                var newVolume = percent * volume + (1 - percent) * this.currentKeyVolumePairs[key];
+                this.props.nodeRef.port.postMessage({type: "changeAmbienceVolume", index: this.ambienceClipNames[key], volume: newVolume});
+            }
+
+
+            await new Promise(r => setTimeout(r, millisecondWaitTime))
+        }
+
+
+    }
 
 
     async GenerateNewMelody() {
@@ -190,6 +242,7 @@ class Sequencer extends Component {
             nextMelodyNoteArray: [],
         })
     }
+
 
     // Converts melodyNoteArray index to hz.
     IndexToPitch(index) {
@@ -283,7 +336,7 @@ class Sequencer extends Component {
         }
     }
     PlayNoise(timeStep) {
-        const before = 2;
+        const before = 3;
         if ((timeStep + before) % 32 === 0) {
             console.log("Starting play");
             this.PlayNote("noise", 0, before * secondsPerBeat, 0);
@@ -308,7 +361,7 @@ class Sequencer extends Component {
         this.SendMelodyNotes(timeStep);
         this.AdvanceBeat(timeStep);
         this.PlayBase(timeStep);
-        // this.PlayNoise(timeStep);
+        this.PlayNoise(timeStep);
     }
 
     GetBaseNoteOfMeasure(measureIndex, BaseNoteDuration) {
